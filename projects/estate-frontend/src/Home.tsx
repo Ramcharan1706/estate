@@ -1,76 +1,62 @@
 // src/components/Home.tsx
-import { useWallet } from '@txnlab/use-wallet-react'
-import React, { useState } from 'react'
-import ConnectWallet from './components/ConnectWallet'
-import Transact from './components/Transact'
-import AppCalls from './components/AppCalls'
+import React, { useState } from 'react';
+import { useWallet } from '@txnlab/use-wallet-react';
 
-interface HomeProps {}
+import Account from './components/Account';
+import ConnectWallet from './components/ConnectWallet';
+import Transact from './components/Transact';
+import AppCalls from './components/AppCalls';
 
-const Home: React.FC<HomeProps> = () => {
-  const [openWalletModal, setOpenWalletModal] = useState<boolean>(false)
-  const [openDemoModal, setOpenDemoModal] = useState<boolean>(false)
-  const [appCallsDemoModal, setAppCallsDemoModal] = useState<boolean>(false)
-  const { activeAddress } = useWallet()
+const Home: React.FC = () => {
+  const { activeAddress } = useWallet();
 
-  const toggleWalletModal = () => {
-    setOpenWalletModal(!openWalletModal)
-  }
+  const [transactModalOpen, setTransactModalOpen] = useState(false);
+  const [appCallModalOpen, setAppCallModalOpen] = useState(false);
 
-  const toggleDemoModal = () => {
-    setOpenDemoModal(!openDemoModal)
-  }
-
-  const toggleAppCallsModal = () => {
-    setAppCallsDemoModal(!appCallsDemoModal)
-  }
+  const handleConnect = (address: string) => {
+    console.log('🔌 Connected address:', address);
+  };
 
   return (
-    <div className="hero min-h-screen bg-teal-400">
-      <div className="hero-content text-center rounded-lg p-6 max-w-md bg-white mx-auto">
-        <div className="max-w-md">
-          <h1 className="text-4xl">
-            Welcome to <div className="font-bold">AlgoKit 🙂</div>
-          </h1>
-          <p className="py-6">
-            This starter has been generated using official AlgoKit React template. Refer to the resource below for next steps.
-          </p>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6 text-center">
+        <h1 className="text-4xl font-bold mb-6">🪪 Land Verification on Algorand</h1>
 
-          <div className="grid">
-            <a
-              data-test-id="getting-started"
-              className="btn btn-primary m-2"
-              target="_blank"
-              href="https://github.com/algorandfoundation/algokit-cli"
+        {/* Wallet connection state */}
+        {activeAddress ? <Account /> : <ConnectWallet onConnect={handleConnect} />}
+
+        {/* Interaction buttons */}
+        {activeAddress && (
+          <div className="mt-6 flex flex-col gap-4">
+            <button
+              className="btn btn-primary"
+              onClick={() => setTransactModalOpen(true)}
             >
-              Getting started
-            </a>
-
-            <div className="divider" />
-            <button data-test-id="connect-wallet" className="btn m-2" onClick={toggleWalletModal}>
-              Wallet Connection
+              Send ALGO
             </button>
 
-            {activeAddress && (
-              <button data-test-id="transactions-demo" className="btn m-2" onClick={toggleDemoModal}>
-                Transactions Demo
-              </button>
-            )}
-
-            {activeAddress && (
-              <button data-test-id="appcalls-demo" className="btn m-2" onClick={toggleAppCallsModal}>
-                Contract Interactions Demo
-              </button>
-            )}
+            <button
+              className="btn btn-secondary"
+              onClick={() => setAppCallModalOpen(true)}
+            >
+              Interact with Smart Contract
+            </button>
           </div>
+        )}
 
-          <ConnectWallet openModal={openWalletModal} closeModal={toggleWalletModal} />
-          <Transact openModal={openDemoModal} setModalState={setOpenDemoModal} />
-          <AppCalls openModal={appCallsDemoModal} setModalState={setAppCallsDemoModal} />
-        </div>
+        {/* Modals */}
+        <Transact
+          openModal={transactModalOpen}
+          setModalState={setTransactModalOpen}
+        />
+
+        <AppCalls
+          openModal={appCallModalOpen}
+          setModalState={setAppCallModalOpen}
+        />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

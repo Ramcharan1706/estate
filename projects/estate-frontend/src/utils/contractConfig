@@ -1,0 +1,6 @@
+export const contractConfig = {
+  appId: parseInt(import.meta.env.VITE_APP_ID || '0'), // App ID from environment
+  contractName: 'LandVerification',
+  network: import.meta.env.VITE_ALGOD_NETWORK || 'testnet', // 'localnet' | 'testnet' | 'mainnet'
+  abiPath: '/artifacts/land_verification.json', // Optional: ABI JSON path
+}

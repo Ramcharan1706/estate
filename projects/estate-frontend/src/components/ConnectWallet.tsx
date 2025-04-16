@@ -1,86 +1,67 @@
-import { useWallet, Wallet, WalletId } from '@txnlab/use-wallet-react'
-import Account from './Account'
+import React, { useState } from 'react';
 
-interface ConnectWalletInterface {
-  openModal: boolean
-  closeModal: () => void
+// Extend the Window interface to include AlgoSigner
+declare global {
+    interface Window {
+        AlgoSigner?: {
+            connect: () => Promise<string[]>;
+        };
+    }
 }
 
-const ConnectWallet = ({ openModal, closeModal }: ConnectWalletInterface) => {
-  const { wallets, activeAddress } = useWallet()
-
-  const isKmd = (wallet: Wallet) => wallet.id === WalletId.KMD
-
-  return (
-    <dialog id="connect_wallet_modal" className={`modal ${openModal ? 'modal-open' : ''}`}style={{ display: openModal ? 'block' : 'none' }}>
-      <form method="dialog" className="modal-box">
-        <h3 className="font-bold text-2xl">Select wallet provider</h3>
-
-        <div className="grid m-2 pt-5">
-          {activeAddress && (
-            <>
-              <Account />
-              <div className="divider" />
-            </>
-          )}
-
-          {!activeAddress &&
-            wallets?.map((wallet) => (
-              <button
-                data-test-id={`${wallet.id}-connect`}
-                className="btn border-teal-800 border-1  m-2"
-                key={`provider-${wallet.id}`}
-                onClick={() => {
-                  return wallet.connect()
-                }}
-              >
-                {!isKmd(wallet) && (
-                  <img
-                    alt={`wallet_icon_${wallet.id}`}
-                    src={wallet.metadata.icon}
-                    style={{ objectFit: 'contain', width: '30px', height: 'auto' }}
-                  />
-                )}
-                <span>{isKmd(wallet) ? 'LocalNet Wallet' : wallet.metadata.name}</span>
-              </button>
-            ))}
-        </div>
-
-        <div className="modal-action grid">
-          <button
-            data-test-id="close-wallet-modal"
-            className="btn"
-            onClick={() => {
-              closeModal()
-            }}
-          >
-            Close
-          </button>
-          {activeAddress && (
-            <button
-              className="btn btn-warning"
-              data-test-id="logout"
-              onClick={async () => {
-                if (wallets) {
-                  const activeWallet = wallets.find((w) => w.isActive)
-                  if (activeWallet) {
-                    await activeWallet.disconnect()
-                  } else {
-                    // Required for logout/cleanup of inactive providers
-                    // For instance, when you login to localnet wallet and switch network
-                    // to testnet/mainnet or vice verse.
-                    localStorage.removeItem('@txnlab/use-wallet:v3')
-                    window.location.reload()
-                  }
-                }
-              }}
-            >
-              Logout
-            </button>
-          )}
-        </div>
-      </form>
-    </dialog>
-  )
+interface WalletConnectProps {
+    onConnect: (address: string) => void;
 }
-export default ConnectWallet
+
+const WalletConnect: React.FC<WalletConnectProps> = ({ onConnect }) => {
+    const [address, setAddress] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleConnect = async () => {
+        if (window.AlgoSigner) {
+            setLoading(true);
+            setError(null); // Reset previous errors
+
+            try {
+                const accounts: string[] = await window.AlgoSigner.connect();
+                const userAddress = accounts[0];
+                setAddress(userAddress);
+                onConnect(userAddress);
+            } catch (err: any) {
+                console.error("AlgoSigner connection error:", err);
+                setError("Failed to connect. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+        } else {
+            alert("Please install AlgoSigner.");
+        }
+    };
+
+    const handleDisconnect = () => {
+        setAddress('');
+        onConnect(''); // You can customize this to reset the parent state
+    };
+
+    return (
+        <div>
+            {/* Button for connecting */}
+            {!address ? (
+                <button onClick={handleConnect} disabled={loading}>
+                    {loading ? 'Connecting...' : 'Connect Wallet (AlgoSigner)'}
+                </button>
+            ) : (
+                <div>
+                    <p>Connected Address: {address}</p>
+                    <button onClick={handleDisconnect}>Disconnect</button>
+                </div>
+            )}
+
+            {/* Show error message if connection fails */}
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+        </div>
+    );
+};
+
+export default WalletConnect;

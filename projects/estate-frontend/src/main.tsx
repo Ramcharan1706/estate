@@ -1,13 +1,16 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App'
-import './styles/App.css'
-import ErrorBoundary from './components/ErrorBoundary'
+// src/main.tsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import ErrorBoundary from './components/ErrorBoundary';
+import './styles/App.css';
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+const rootElement = document.getElementById('root') as HTMLElement;
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App />
+      <App /> {/* App includes Router + WalletProvider + Routes */}
     </ErrorBoundary>
-  </React.StrictMode>,
-)
+  </React.StrictMode>
+);
