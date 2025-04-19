@@ -1,16 +1,45 @@
-// src/main.tsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import ErrorBoundary from './components/ErrorBoundary';
-import './styles/App.css';
 
-const rootElement = document.getElementById('root') as HTMLElement;
+// ✅ Error boundary wrapper
+import { ErrorBoundary } from './components/ErrorBoundary';
 
-ReactDOM.createRoot(rootElement).render(
+// ✅ WalletProvider import
+import { WalletProvider } from '@txnlab/use-wallet-react';
+
+// ✅ Wallet connectors
+import { DeflyWalletConnect } from '@blockshake/defly-connect';
+import { PeraWalletConnect } from '@perawallet/connect';
+
+// ✅ Algorand SDK
+import algosdk from 'algosdk';
+
+// ✅ Create Algod client (Testnet - Algonode)
+const algodClient = new algosdk.Algodv2(
+  '', // No token required for Algonode
+  'https://testnet-api.algonode.cloud',
+  ''
+);
+
+// ✅ Wallet providers
+const walletProviders = [
+  new PeraWalletConnect(),
+  new DeflyWalletConnect(),
+];
+
+// ✅ Render the app with WalletProvider + ErrorBoundary
+const root = ReactDOM.createRoot(document.getElementById('root')!);
+root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App /> {/* App includes Router + WalletProvider + Routes */}
+      <WalletProvider
+        algodClient={algodClient}
+        network="testnet"
+        providers={walletProviders}
+      >
+        <App />
+      </WalletProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

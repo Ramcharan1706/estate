@@ -51,6 +51,7 @@ const AppCalls = ({ openModal, setModalState }: AppCallsInterface) => {
       return
     }
 
+    // Validate buyer address
     if (buyerAddress && !algosdk.isValidAddress(buyerAddress)) {
       enqueueSnackbar('Invalid Algorand address.', { variant: 'error' })
       return
@@ -85,7 +86,6 @@ const AppCalls = ({ openModal, setModalState }: AppCallsInterface) => {
 
       const { txId } = await algorand.getAlgodClient().sendRawTransaction(signedTxn).do()
       await algosdk.waitForConfirmation(algorand.getAlgodClient(), txId, 4)
-
       enqueueSnackbar('Transaction successful!', { variant: 'success' })
       console.log('Transaction ID:', txId)
 
@@ -150,7 +150,7 @@ const AppCalls = ({ openModal, setModalState }: AppCallsInterface) => {
         <div className="modal-action">
           <button
             className="btn"
-            onClick={() => setModalState(!openModal)}
+            onClick={() => setModalState(false)} // Close modal when clicked
             disabled={loading}
           >
             Close

@@ -1,62 +1,37 @@
-// src/components/Home.tsx
-import React, { useState } from 'react';
-import { useWallet } from '@txnlab/use-wallet-react';
+// src/main.tsx
 
-import Account from './components/Account';
-import ConnectWallet from './components/ConnectWallet';
-import Transact from './components/Transact';
-import AppCalls from './components/AppCalls';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import { WalletProvider } from '@txnlab/use-wallet';
+import { DeflyWalletConnect } from '@blockshake/defly-connect';
+import { PeraWalletConnect } from '@perawallet/connect';
+import algosdk from 'algosdk';
 
-const Home: React.FC = () => {
-  const { activeAddress } = useWallet();
+// Define the wallet providers
+const walletProviders = [
+  new DeflyWalletConnect(),
+  new PeraWalletConnect(),
+];
 
-  const [transactModalOpen, setTransactModalOpen] = useState(false);
-  const [appCallModalOpen, setAppCallModalOpen] = useState(false);
+// Create the algodClient
+const algodClient = new algosdk.Algodv2(
+  '', // API Token (empty for testnet in this case)
+  'https://testnet-api.algonode.cloud', // API Server (Testnet URL)
+  '' // Port (empty for default)
+);
 
-  const handleConnect = (address: string) => {
-    console.log('🔌 Connected address:', address);
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6 text-center">
-        <h1 className="text-4xl font-bold mb-6">🪪 Land Verification on Algorand</h1>
-
-        {/* Wallet connection state */}
-        {activeAddress ? <Account /> : <ConnectWallet onConnect={handleConnect} />}
-
-        {/* Interaction buttons */}
-        {activeAddress && (
-          <div className="mt-6 flex flex-col gap-4">
-            <button
-              className="btn btn-primary"
-              onClick={() => setTransactModalOpen(true)}
-            >
-              Send ALGO
-            </button>
-
-            <button
-              className="btn btn-secondary"
-              onClick={() => setAppCallModalOpen(true)}
-            >
-              Interact with Smart Contract
-            </button>
-          </div>
-        )}
-
-        {/* Modals */}
-        <Transact
-          openModal={transactModalOpen}
-          setModalState={setTransactModalOpen}
-        />
-
-        <AppCalls
-          openModal={appCallModalOpen}
-          setModalState={setAppCallModalOpen}
-        />
-      </div>
-    </div>
-  );
+// Prepare the wallet config
+const walletConfig = {
+  algodClient, // Pass the client here
+  network: 'testnet', // Network configuration
+  providers: walletProviders, // Wallet providers
 };
 
-export default Home;
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+  <React.StrictMode>
+    <WalletProvider value={walletConfig}> {/* Pass the walletConfig through `value` prop */}
+      <App />
+    </WalletProvider>
+  </React.StrictMode>
+);

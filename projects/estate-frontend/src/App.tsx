@@ -1,100 +1,85 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { WalletProvider } from '@txnlab/use-wallet-react';
-import { PeraWallet } from '@txnlab/use-wallet';
-import algosdk from 'algosdk';
+import { PeraWallet } from '@txnlab/use-wallet'; // Correct Pera Wallet import
+import { algodClient } from './src/algodClient'; // Ensure this is correct or use the client directly here
 
-import { getAlgodConfigFromViteEnvironment } from './utils/network/getAlgoClientConfigs';
-
+// Components
+import { ErrorBoundary } from './components/ErrorBoundary';
 import PropertyList from './components/propertylist';
 import PropertyDetail from './components/propertydetail';
 import Account from './components/Account';
 import AppCalls from './components/AppCalls';
-import ErrorBoundary from './components/ErrorBoundary'; // Assuming you have an error boundary component
 
 const App: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
-  const [algodClient, setAlgodClient] = useState<algosdk.Algodv2 | null>(null); // State for algodClient
-  const [loading, setLoading] = useState(true); // State to track if the app is still loading
-  const [error, setError] = useState<string | null>(null); // Error state to handle any issues
+  const [algodReady, setAlgodReady] = useState(false);
 
-  useEffect(() => {
-    const algodConfig = getAlgodConfigFromViteEnvironment();
-
-    // Log algodConfig to debug
-    console.log('Algod Config:', algodConfig);
-
-    // Initialize algodClient only if all fields are provided
-    if (algodConfig.token && algodConfig.server && algodConfig.port) {
-      try {
-        const client = new algosdk.Algodv2(
-          algodConfig.token,
-          algodConfig.server,
-          algodConfig.port
-        );
-        setAlgodClient(client); // Set the client in state
-        setError(null); // Reset error if successful
-      } catch (err) {
-        console.error('Error initializing Algorand client:', err);
-        setError('Failed to initialize Algorand client');
-      }
-    } else {
-      setError('Missing Algod configuration');
-    }
-
-    // After algodClient is initialized, set loading to false
-    setLoading(false);
-  }, []);
-
+  // Define wallet connectors
   const wallets = [
     new PeraWallet({
       id: 'pera-wallet',
-      metadata: {
-        name: 'Pera Wallet',
-      },
+      metadata: { name: 'Pera Wallet' },
     }),
   ];
 
-  if (loading) {
-    return <div>Loading Algorand Client...</div>; // Show a loading state while waiting for algodClient
-  }
+  // Check if algodClient is ready
+  useEffect(() => {
+    if (algodClient) {
+      console.log('✅ Algod Client is ready:', algodClient);
+      setAlgodReady(true);
+    } else {
+      console.error('❌ algodClient is undefined');
+    }
+  }, [algodClient]);
 
-  // If there's an error initializing algodClient, show the error message
-  if (error) {
-    return <div>{error}</div>;
-  }
-
-  // If algodClient is not available, show an error message
-  if (!algodClient) {
-    return <div>Error: Failed to initialize Algorand Client</div>;
+  // Show loading message while algodClient is initializing
+  if (!algodReady) {
+    return <div className="p-10 text-center">🔄 Initializing Algod Client...</div>;
   }
 
   return (
     <ErrorBoundary>
+      {/* Wrap the app in WalletProvider and pass algodClient to it */}
       <WalletProvider wallets={wallets} algodClient={algodClient}>
         <BrowserRouter>
           <div className="min-h-screen bg-base-200 p-10">
             <section className="max-w-4xl mx-auto space-y-6">
               <h1 className="text-4xl font-bold">🪪 Land Verification on Algorand</h1>
 
-              {/* Wallet & Account Section */}
+              {/* Wallet & Account Info */}
               <Account />
 
-              {/* Smart Contract Interaction Button */}
-              <div className="pt-6">
+              {/* Fetch Account Info Button */}
+              <div className="mt-4">
                 <button
-                  className="btn btn-primary"
-                  onClick={() => setModalOpen(true)}
+                  className="btn btn-outline btn-info"
+                  onClick={async () => {
+                    try {
+                      const info = await algodClient.accountInformation('your-account-address').do();
+                      console.log('📄 Account Info:', info);
+                    } catch (error) {
+                      console.error('❌ Error fetching account info:', error);
+                    }
+                  }}
                 >
+                  Fetch Account Info
+                </button>
+              </div>
+
+              {/* Interact with Smart Contract */}
+              <div className="pt-6">
+                <button className="btn btn-primary" onClick={() => setModalOpen(true)}>
                   Interact with Smart Contract
                 </button>
               </div>
             </section>
 
-            {/* Routing to Components */}
+            {/* Route Views */}
             <Routes>
               <Route path="/" element={<PropertyList />} />
               <Route path="/property/:id" element={<PropertyDetail />} />
+              <Route path="*" element={<div>Page not found</div>} />
             </Routes>
 
             {/* Smart Contract Modal */}
